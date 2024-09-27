@@ -1,6 +1,8 @@
 package main
 
 import (
+	"errors"
+	"fmt"
 	"log"
 
 	"github.com/google/gousb"
@@ -10,6 +12,15 @@ const vendorId = 0x0a67
 const productId = 0x2114
 
 func main() {
+	errChan := make(chan error)
+	go read(errChan)
+
+	for err := range errChan {
+		log.Fatalf("Error in reader: %v", err)
+	}
+}
+
+func read(errChan chan error) {
 	log.Println("Initializing usb context")
 
 	ctx := gousb.NewContext()
@@ -61,6 +72,73 @@ func main() {
 		if err != nil {
 			log.Fatalf("Error reading from USB: %v", err)
 		}
-		log.Printf("Read %d bytes: %x\n", n, buf[:n])
+
+		if n < 4 {
+			continue
+		}
+
+		if buf[0] == 0b00001111 {
+			continue
+		}
+
+		//log.Printf("Read %d bytes: %08b\n", n, buf[:n])
+
+		if buf[0] != 0b00001001 {
+			errChan <- errors.New(fmt.Sprintf("Unkown first byte %0b", buf[0]))
+			return
+		}
+
+		var status int
+		if buf[1] == 0x90 {
+			status = NoteOn
+		} else {
+			errChan <- errors.New(fmt.Sprintf("Unkown status byte %0b", buf[1]))
+			return
+		}
+
+		if status == NoteOn {
+			noteNumber := buf[2]
+			remainder := noteNumber % 12
+
+			var note string
+			if remainder == 0 {
+				note = C
+			} else if remainder == 2 {
+				note = D
+			} else if remainder == 4 {
+				note = E
+			} else if remainder == 5 {
+				note = F
+			} else if remainder == 7 {
+				note = G
+			} else if remainder == 9 {
+				note = A
+			} else if remainder == 11 {
+				note = H
+			}
+
+			velocity := buf[3]
+
+			if velocity == 0 {
+				status = NoteOff
+				log.Printf("NoteOff %s\n", note)
+			} else {
+				log.Printf("NoteOn %s with %d/127 velocity\n", note, int(velocity))
+			}
+
+		}
 	}
 }
+
+const (
+	NoteOn  = iota
+	NoteOff = iota
+
+	C = "C"
+	D = "D"
+	E = "E"
+	F = "F"
+	G = "G"
+	A = "A"
+	H = "H"
+)
