@@ -88,63 +88,65 @@ func readLoop() error {
 			continue
 		}
 
-		if buf[0] == 0b00001111 {
-			continue
-		}
+		for i := range n / 4 {
+			data := buf[i*4 : i*4+4]
 
-		log.Printf("Read %d bytes: %08b\n", n, buf[:n])
-
-		if buf[0] != 0b00001001 {
-			return errors.New(fmt.Sprintf("Unkown first byte %0b", buf[0]))
-		}
-
-		var status int
-		if buf[1] == 0x90 {
-			status = NoteOn
-		} else {
-			return errors.New(fmt.Sprintf("Unkown status byte %0b", buf[1]))
-		}
-
-		if status == NoteOn {
-			noteNumber := buf[2]
-			remainder := noteNumber % 12
-
-			var note string
-			if remainder == 0 {
-				note = C
-			} else if remainder == 1 {
-				note = CSharp
-			} else if remainder == 2 {
-				note = D
-			} else if remainder == 3 {
-				note = DSharp
-			} else if remainder == 4 {
-				note = E
-			} else if remainder == 5 {
-				note = F
-			} else if remainder == 6 {
-				note = FSharp
-			} else if remainder == 7 {
-				note = G
-			} else if remainder == 8 {
-				note = GSharp
-			} else if remainder == 9 {
-				note = A
-			} else if remainder == 10 {
-				note = ASharp
-			} else if remainder == 11 {
-				note = B
+			if data[0] == 0b00001111 {
+				continue
 			}
 
-			velocity := buf[3]
+			if data[0] != 0b00001001 {
+				return errors.New(fmt.Sprintf("Unkown first byte %0b", data[0]))
+			}
 
-			if velocity == 0 {
-				status = NoteOff
-				log.Printf("NoteOff %s\n", note)
+			var status int
+			if data[1] == 0x90 {
+				status = NoteOn
 			} else {
-				log.Printf("NoteOn %s with %d/127 velocity\n", note, int(velocity))
+				return errors.New(fmt.Sprintf("Unkown status byte %0b", data[1]))
 			}
 
+			if status == NoteOn {
+				noteNumber := data[2]
+				remainder := noteNumber % 12
+
+				var note string
+				if remainder == 0 {
+					note = C
+				} else if remainder == 1 {
+					note = CSharp
+				} else if remainder == 2 {
+					note = D
+				} else if remainder == 3 {
+					note = DSharp
+				} else if remainder == 4 {
+					note = E
+				} else if remainder == 5 {
+					note = F
+				} else if remainder == 6 {
+					note = FSharp
+				} else if remainder == 7 {
+					note = G
+				} else if remainder == 8 {
+					note = GSharp
+				} else if remainder == 9 {
+					note = A
+				} else if remainder == 10 {
+					note = ASharp
+				} else if remainder == 11 {
+					note = B
+				}
+
+				velocity := data[3]
+
+				if velocity == 0 {
+					status = NoteOff
+					log.Printf("NoteOff %s\n", note)
+				} else {
+					log.Printf("NoteOn %s with %d/127 velocity\n", note, int(velocity))
+				}
+
+			}
 		}
 	}
 }
