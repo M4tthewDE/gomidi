@@ -114,7 +114,7 @@ func read(errChan chan error) {
 			} else if remainder == 9 {
 				note = A
 			} else if remainder == 11 {
-				note = H
+				note = B
 			}
 
 			velocity := buf[3]
@@ -140,5 +140,5 @@ const (
 	F = "F"
 	G = "G"
 	A = "A"
-	H = "H"
+	B = "B"
 )
