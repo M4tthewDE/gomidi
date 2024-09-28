@@ -21,6 +21,13 @@ func main() {
 }
 
 func read(errChan chan error) {
+	err := readLoop()
+	if err != nil {
+		errChan <- err
+	}
+}
+
+func readLoop() error {
 	log.Println("Initializing usb context")
 
 	ctx := gousb.NewContext()
@@ -28,39 +35,39 @@ func read(errChan chan error) {
 
 	device, err := ctx.OpenDeviceWithVIDPID(vendorId, productId)
 	if err != nil {
-		log.Fatalf("Could not open USB device: %v", err)
+		return errors.New(fmt.Sprintf("Could not open USB device: %v", err))
 	}
 
 	defer device.Close()
 
 	if device == nil {
-		log.Fatalf("No device found with VID:PID %4x:%04x", vendorId, productId)
+		return errors.New(fmt.Sprintf("No device found with VID:PID %4x:%04x", vendorId, productId))
 	}
 
 	log.Printf("Opened device %04x:%04x\n", vendorId, productId)
 
 	err = device.SetAutoDetach(true)
 	if err != nil {
-		log.Fatalf("Error turning on auto detach: %v", err)
+		return errors.New(fmt.Sprintf("Error turning on auto detach: %v", err))
 	}
 
 	cfg, err := device.Config(1)
 	if err != nil {
-		log.Fatalf("Error setting config: %v", err)
+		return errors.New(fmt.Sprintf("Error setting config: %v", err))
 	}
 
 	defer cfg.Close()
 
 	intf, err := cfg.Interface(1, 0)
 	if err != nil {
-		log.Fatalf("Error claiming interface: %v", err)
+		return errors.New(fmt.Sprintf("Error claiming interface: %v", err))
 	}
 
 	defer intf.Close()
 
 	inEndpoint, err := intf.InEndpoint(1)
 	if err != nil {
-		log.Fatalf("Error opening IN endpoint: %v", err)
+		return errors.New(fmt.Sprintf("Error opening IN endpoint: %v", err))
 	}
 
 	buf := make([]byte, 64)
@@ -70,11 +77,11 @@ func read(errChan chan error) {
 	for {
 		n, err := inEndpoint.Read(buf)
 		if err != nil {
-			log.Fatalf("Error reading from USB: %v", err)
+			return errors.New(fmt.Sprintf("Error reading from USB: %v", err))
 		}
 
 		if n%4 != 0 {
-			errChan <- errors.New(fmt.Sprintf("Data length is not a multiple of 4: %v %v", n, buf))
+			return errors.New(fmt.Sprintf("Data length is not a multiple of 4: %v %v", n, buf))
 		}
 
 		if n < 4 {
@@ -88,16 +95,14 @@ func read(errChan chan error) {
 		log.Printf("Read %d bytes: %08b\n", n, buf[:n])
 
 		if buf[0] != 0b00001001 {
-			errChan <- errors.New(fmt.Sprintf("Unkown first byte %0b", buf[0]))
-			return
+			return errors.New(fmt.Sprintf("Unkown first byte %0b", buf[0]))
 		}
 
 		var status int
 		if buf[1] == 0x90 {
 			status = NoteOn
 		} else {
-			errChan <- errors.New(fmt.Sprintf("Unkown status byte %0b", buf[1]))
-			return
+			return errors.New(fmt.Sprintf("Unkown status byte %0b", buf[1]))
 		}
 
 		if status == NoteOn {
