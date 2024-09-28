@@ -73,6 +73,10 @@ func read(errChan chan error) {
 			log.Fatalf("Error reading from USB: %v", err)
 		}
 
+		if n%4 != 0 {
+			errChan <- errors.New(fmt.Sprintf("Data length is not a multiple of 4: %v %v", n, buf))
+		}
+
 		if n < 4 {
 			continue
 		}
@@ -81,7 +85,7 @@ func read(errChan chan error) {
 			continue
 		}
 
-		//log.Printf("Read %d bytes: %08b\n", n, buf[:n])
+		log.Printf("Read %d bytes: %08b\n", n, buf[:n])
 
 		if buf[0] != 0b00001001 {
 			errChan <- errors.New(fmt.Sprintf("Unkown first byte %0b", buf[0]))
