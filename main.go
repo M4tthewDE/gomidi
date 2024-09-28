@@ -103,16 +103,26 @@ func read(errChan chan error) {
 			var note string
 			if remainder == 0 {
 				note = C
+			} else if remainder == 1 {
+				note = CSharp
 			} else if remainder == 2 {
 				note = D
+			} else if remainder == 3 {
+				note = DSharp
 			} else if remainder == 4 {
 				note = E
 			} else if remainder == 5 {
 				note = F
+			} else if remainder == 6 {
+				note = FSharp
 			} else if remainder == 7 {
 				note = G
+			} else if remainder == 8 {
+				note = GSharp
 			} else if remainder == 9 {
 				note = A
+			} else if remainder == 10 {
+				note = ASharp
 			} else if remainder == 11 {
 				note = B
 			}
@@ -134,11 +144,16 @@ const (
 	NoteOn  = iota
 	NoteOff = iota
 
-	C = "C"
-	D = "D"
-	E = "E"
-	F = "F"
-	G = "G"
-	A = "A"
-	B = "B"
+	C      = "C"
+	CSharp = "C#"
+	D      = "D"
+	DSharp = "D#"
+	E      = "E"
+	F      = "F"
+	FSharp = "F#"
+	G      = "G"
+	GSharp = "G#"
+	A      = "A"
+	ASharp = "A#"
+	B      = "B"
 )
