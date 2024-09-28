@@ -96,7 +96,8 @@ func readLoop() error {
 			}
 
 			if data[0] != 0b00001001 {
-				return errors.New(fmt.Sprintf("Unkown first byte %0b", data[0]))
+				log.Printf("Unkown first byte %0b\n", data[0])
+				continue
 			}
 
 			var status int
